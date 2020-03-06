@@ -68,8 +68,20 @@ public class FAtlasManager
 		
 		AddAtlas(atlas);
 	}
-	
-	private void AddAtlas(FAtlas atlas)
+
+    public void ActuallyLoadAtlasOrImageNew(string name, string imagePath, string dataPath)
+    {
+        if (DoesContainAtlas(name)) return; //we already have it, don't load it again
+
+        //if dataPath is empty, load it as a single image
+        bool isSingleImage = (dataPath == "");
+
+        FAtlas atlas = new FAtlas(name, imagePath, dataPath, _nextAtlasIndex++, isSingleImage,false);
+
+        AddAtlas(atlas);
+    }
+
+    private void AddAtlas(FAtlas atlas)
 	{
 		int elementCount = atlas.elements.Count;
 		for(int e = 0; e<elementCount; ++e)
@@ -115,8 +127,32 @@ public class FAtlasManager
 			ActuallyLoadAtlasOrImage(atlasPath, atlasPath+Futile.resourceSuffix, atlasPath+Futile.resourceSuffix);
 		}
 	}
-	
-	public void LoadImage(string imagePath)
+
+    public void LoadAtlasDirectly(string atlasPath)
+    {
+        if (DoesContainAtlas(atlasPath)) return; //we already have it, don't load it again
+
+        string filePath = atlasPath.Replace(".atlas","");
+
+        TextAsset imageBytes = Resources.Load(filePath, typeof(TextAsset)) as TextAsset;
+
+        if (imageBytes != null) //do we have png bytes?
+        {
+            Texture2D texture = new Texture2D(0, 0, TextureFormat.ARGB32, false);
+
+            texture.LoadImage(imageBytes.bytes);
+
+            Resources.UnloadAsset(imageBytes);
+
+            LoadAtlasFromTexture(atlasPath, atlasPath + Futile.resourceSuffix, texture);
+        }
+        else //load it as a normal Unity image asset
+        {
+            ActuallyLoadAtlasOrImageNew(atlasPath, filePath, atlasPath + Futile.resourceSuffix);
+        }
+    }
+
+    public void LoadImage(string imagePath)
 	{
 		if(DoesContainAtlas(imagePath)) return; //we already have it
 		

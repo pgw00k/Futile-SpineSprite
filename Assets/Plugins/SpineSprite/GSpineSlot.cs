@@ -50,7 +50,8 @@ public class GSpineSlot : FContainer {
 				
 			// else we do not have an attachment already set
 			}else{
-				_attachment = new GSpineAttachment(_slot);
+
+                _attachment = new GSpineAttachment(_slot);
 				AddChild(_attachment);
 			}
 			

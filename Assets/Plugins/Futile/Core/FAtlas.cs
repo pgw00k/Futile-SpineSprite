@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 
 public class FAtlasElement
 {
@@ -117,8 +118,30 @@ public class FAtlas
 			LoadAtlasData();
 		}
 	}
-	
-	private void LoadTexture()
+
+    public FAtlas(string name, string imagePath, string dataPath, int index, bool shouldLoadAsSingleImage,bool IsJosn)
+    {
+        _name = name;
+        _imagePath = imagePath;
+        _dataPath = dataPath;
+
+        _index = index;
+
+        LoadTexture();
+
+        if (shouldLoadAsSingleImage)
+        {
+            _isSingleImage = true;
+            CreateAtlasFromSingleImage();
+        }
+        else
+        {
+            _isSingleImage = false;
+            LoadAtlasDataNotJson();
+        }
+    }
+
+    private void LoadTexture()
 	{
 		_texture = Resources.Load (_imagePath, typeof(Texture)) as Texture;
 		 
@@ -131,6 +154,81 @@ public class FAtlas
 		
 		_textureSize = new Vector2(_texture.width,_texture.height);
 	}
+
+    private void LoadAtlasDataNotJson()
+    {
+        TextAsset dataAsset = Resources.Load(_dataPath, typeof(TextAsset)) as TextAsset;
+
+        if (dataAsset == null)
+        {
+            throw new FutileException("Couldn't load the atlas data from: " + _dataPath);
+        }
+
+        float scaleInverse = Futile.resourceScaleInverse;
+
+        int index = 0;
+
+        string[] lines = dataAsset.text.Split('\n');
+
+        for(int i =6;i< lines.Length-1; i+=7)
+        {
+            FAtlasElement element = new FAtlasElement();
+
+            element.indexInAtlas = index++;
+
+            string name = lines[i];
+
+            element.name = name;
+
+            if (Convert.ToBoolean(lines[i + 1].Split(':')[1]))
+            {
+                //throw new NotSupportedException("Futile no longer supports TexturePacker's \"rotated\" flag. Please disable it when creating the " + _dataPath + " atlas.");
+            }
+
+            float frameX = Convert.ToSingle(lines[i + 2].Split(':')[1].Split(',')[0]);
+            float frameY = Convert.ToSingle(lines[i + 2].Split(':')[1].Split(',')[1]);
+            float frameW = Convert.ToSingle(lines[i + 3].Split(':')[1].Split(',')[0]);
+            float frameH = Convert.ToSingle(lines[i + 3].Split(':')[1].Split(',')[1]);
+
+            Rect uvRect = new Rect
+            (
+                frameX / _textureSize.x,
+                ((_textureSize.y - frameY - frameH) / _textureSize.y),
+                frameW / _textureSize.x,
+                frameH / _textureSize.y
+            );
+
+            element.uvRect = uvRect;
+
+            element.uvTopLeft.Set(uvRect.xMin, uvRect.yMax);
+            element.uvTopRight.Set(uvRect.xMax, uvRect.yMax);
+            element.uvBottomRight.Set(uvRect.xMax, uvRect.yMin);
+            element.uvBottomLeft.Set(uvRect.xMin, uvRect.yMin);
+
+
+
+            element.sourcePixelSize.x = 0;
+            element.sourcePixelSize.y = 0;
+
+            element.sourceSize.x = element.sourcePixelSize.x * scaleInverse;
+            element.sourceSize.y = element.sourcePixelSize.y * scaleInverse;
+
+
+            float rectX = 0 * scaleInverse;
+            float rectY = 0 * scaleInverse;
+            float rectW = 0 * scaleInverse;
+            float rectH = 0 * scaleInverse;
+
+            element.sourceRect = new Rect(rectX, rectY, rectW, rectH);
+
+            _elements.Add(element);
+            _elementsByName.Add(element.name, element);
+
+        }
+
+        Resources.UnloadAsset(dataAsset);
+
+    }
 	
 	private void LoadAtlasData()
 	{

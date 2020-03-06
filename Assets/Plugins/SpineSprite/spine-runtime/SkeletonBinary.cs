@@ -134,19 +134,20 @@ namespace Spine {
 				skeletonData.bones.Add(boneData);
 			}
 
-			// IK constraints.
-			for (int i = 0, n = ReadInt(input, true); i < n; i++) {
-				IkConstraintData ikConstraintData = new IkConstraintData(ReadString(input));
-				for (int ii = 0, nn = ReadInt(input, true); ii < nn; ii++)
-					ikConstraintData.bones.Add(skeletonData.bones[ReadInt(input, true)]);
-				ikConstraintData.target = skeletonData.bones[ReadInt(input, true)];
-				ikConstraintData.mix = ReadFloat(input);
-				ikConstraintData.bendDirection = ReadSByte(input);
-				skeletonData.ikConstraints.Add(ikConstraintData);
-			}
+            // IK constraints.
+            for (int i = 0, n = ReadInt(input, true); i < n; i++)
+            {
+                IkConstraintData ikConstraintData = new IkConstraintData(ReadString(input));
+                for (int ii = 0, nn = ReadInt(input, true); ii < nn; ii++)
+                    ikConstraintData.bones.Add(skeletonData.bones[ReadInt(input, true)]);
+                ikConstraintData.target = skeletonData.bones[ReadInt(input, true)];
+                ikConstraintData.mix = ReadFloat(input);
+                ikConstraintData.bendDirection = ReadSByte(input);
+                skeletonData.ikConstraints.Add(ikConstraintData);
+            }
 
-			// Slots.
-			for (int i = 0, n = ReadInt(input, true); i < n; i++) {
+            // Slots.
+            for (int i = 0, n = ReadInt(input, true); i < n; i++) {
 				String slotName = ReadString(input);
 				BoneData boneData = skeletonData.bones[ReadInt(input, true)];
 				SlotData slotData = new SlotData(slotName, boneData);
@@ -202,7 +203,11 @@ namespace Spine {
 				int slotIndex = ReadInt(input, true);
 				for (int ii = 0, nn = ReadInt(input, true); ii < nn; ii++) {
 					String name = ReadString(input);
-					skin.AddAttachment(slotIndex, name, ReadAttachment(input, skin, name, nonessential));
+                    Attachment attachment = ReadAttachment(input, skin, name, nonessential);
+                    if (attachment != null)
+                    {
+                        skin.AddAttachment(slotIndex, name, attachment);
+                    }
 				}
 			}
 			return skin;
@@ -213,14 +218,15 @@ namespace Spine {
 
 			String name = ReadString(input);
 			if (name == null) name = attachmentName;
-
-			switch ((AttachmentType)input.ReadByte()) {
+            AttachmentType t = (AttachmentType)input.ReadByte();
+			switch (t) {
 			case AttachmentType.region: {
 				String path = ReadString(input);
 				if (path == null) path = name;
 				RegionAttachment region = attachmentLoader.NewRegionAttachment(skin, name, path);
-				if (region == null) return null;
-				region.Path = path;
+                        //if (region == null) return null;
+                        if (region == null) region = new RegionAttachment(name);
+                region.Path = path;
 				region.x = ReadFloat(input) * scale;
 				region.y = ReadFloat(input) * scale;
 				region.scaleX = ReadFloat(input);
@@ -238,7 +244,8 @@ namespace Spine {
 			}
 			case AttachmentType.boundingbox: {
 				BoundingBoxAttachment box = attachmentLoader.NewBoundingBoxAttachment(skin, name);
-				if (box == null) return null;
+                        //if (box == null) return null;
+                        if (box == null) { box = new BoundingBoxAttachment(name); }
 				box.vertices = ReadFloatArray(input, scale);
 				return box;
 			}
@@ -246,7 +253,8 @@ namespace Spine {
 				String path = ReadString(input);
 				if (path == null) path = name;
 				MeshAttachment mesh = attachmentLoader.NewMeshAttachment(skin, name, path);
-				if (mesh == null) return null;
+                        //if (mesh == null) return null;
+                        if (mesh == null) mesh = new MeshAttachment(name);
 				mesh.Path = path;
 				mesh.regionUVs = ReadFloatArray(input, 1);
 				mesh.triangles = ReadShortArray(input);
@@ -269,7 +277,9 @@ namespace Spine {
 				String path = ReadString(input);
 				if (path == null) path = name;
 				SkinnedMeshAttachment mesh = attachmentLoader.NewSkinnedMeshAttachment(skin, name, path);
-				if (mesh == null) return null;
+                        //if (mesh == null) return null;
+                        if (mesh == null) { mesh = new SkinnedMeshAttachment(name); }
+                        //ReadInt(input, true);
 				mesh.Path = path;
 				float[] uvs = ReadFloatArray(input, 1);
 				int[] triangles = ReadShortArray(input);

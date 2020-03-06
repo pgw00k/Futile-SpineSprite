@@ -38,15 +38,44 @@ public class GSpineManager {
 			Debug.Log("Skeleton already exists for name [" + name + "]");	
 		}
 	}
+
+    public static void LoadSpineBySkel(string name,string skelPtah)
+    {
+        if (!DoesContainSkeleton(name))
+        {
+            SkeletonBinary binary = new SkeletonBinary(_attachmentLoader);
+            SkeletonData skeletonData = binary.ReadSkeletonData(Application.dataPath+ @"\Resources\" + skelPtah);
+
+            if (skeletonData != null)
+            {
+                _skeletons.Add(name, skeletonData);
+            }
+            else
+            {
+                Debug.Log("Could not load Skeleton Data");
+            }
+        }
+        else
+        {
+            Debug.Log("Skeleton already exists for name [" + name + "]");
+        }
+    }
+
 	
 	// sugar to allow you to load a spine json file and futile atlas at the same time.
 	public static void LoadSpine(string name, string jsonPath, string atlasPath){
 		Futile.atlasManager.LoadAtlas(atlasPath);
 		LoadSpine(name, jsonPath);
 	}
-	
-	// check if the skeleton name exists in the dictionary
-	public static bool DoesContainSkeleton(string name){
+
+    public static void LoadSpineBySkel(string name, string skelPath, string atlasPath)
+    {
+        Futile.atlasManager.LoadAtlasDirectly(atlasPath);
+        LoadSpineBySkel(name, skelPath);
+    }
+
+    // check if the skeleton name exists in the dictionary
+    public static bool DoesContainSkeleton(string name){
 		if(_skeletons.ContainsKey(name)){
 			return true;
 		}
